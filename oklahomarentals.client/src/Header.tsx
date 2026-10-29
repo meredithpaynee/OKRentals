@@ -1,64 +1,63 @@
-
-import { Cloudinary } from '@cloudinary/url-gen';
-import { AdvancedImage } from '@cloudinary/react';
-import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import './header.css';
-import NavBar from './NavBar'
-//import './logo.jpg'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from 'react-oidc-context'
+import { CAMPUSES, CONTACT_EMAIL, CONTACT_PHONE, SITE_NAME } from './site/siteInfo'
+import './header.css'
 
-function menu(menuOpen: boolean, setMenuOpen: (a: boolean) => void) {
+export default function Header() {
+    const navigate = useNavigate()
+    const auth = useAuth()
+    const [menuOpen, setMenuOpen] = useState(false)
+
+    const openPortal = () => {
+        setMenuOpen(false)
+        if (auth.isAuthenticated) navigate('/portal')
+        else auth.signinRedirect()
+    }
+
+    const links = [
+        ...CAMPUSES.map(c => ({ to: `/properties/${c.slug}`, label: c.name })),
+        { to: '/about', label: 'About' },
+        { to: '/contact', label: 'Contact' },
+        { to: '/apply', label: 'Apply' },
+    ]
+
     return (
-    <button className="menu-toggle" aria-label="Menu" onClick={() => setMenuOpen(!menuOpen)} >
-        <span></span>
-        <span></span>
-        <span></span>
-    </button>
+        <header className="site-header">
+            <div className="site-header__utility">
+                <div className="site-header__inner">
+                    <span>Student rentals in Norman and Stillwater</span>
+                    <span className="site-header__contact">
+                        <a href={`tel:${CONTACT_PHONE}`}>{CONTACT_PHONE}</a>
+                        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+                    </span>
+                </div>
+            </div>
+
+            <div className="site-header__inner site-header__main">
+                <Link to="/" className="site-header__brand" onClick={() => setMenuOpen(false)}>
+                    <img src="/logo.jpg" alt="" width="36" height="36" />
+                    <span>{SITE_NAME}</span>
+                </Link>
+
+                <button
+                    className="site-header__toggle"
+                    aria-expanded={menuOpen}
+                    aria-controls="site-nav"
+                    onClick={() => setMenuOpen(!menuOpen)}
+                >
+                    {menuOpen ? 'Close' : 'Menu'}
+                </button>
+
+                <nav id="site-nav" className={`site-header__nav${menuOpen ? ' is-open' : ''}`} aria-label="Main">
+                    {links.map(link => (
+                        <NavLink key={link.to} to={link.to} onClick={() => setMenuOpen(false)}>
+                            {link.label}
+                        </NavLink>
+                    ))}
+                    <button className="site-header__portal" onClick={openPortal}>Resident portal</button>
+                </nav>
+            </div>
+        </header>
     )
 }
-
-function welcome(userName : string) {
-    return (<span>Welcome, {userName}</span>)
-}
-
-function Header() {
-    const loggedIn = false;
-    const userName = "Meredith Payne"
-    const [menuOpen, setMenuOpen] = useState(false);
-    //const [menuVisible, setMenuVisible] = useState(true);
-    const navigate = useNavigate();
-    let right = null;
-
-    const cld = new Cloudinary({ cloud: { cloudName: 'djt05lgzv' } });
-
-    // Use this sample image or upload your own via the Media Library
-    const img = cld
-        .image('logo_cdwhmc.jpg')
-        .format('auto')
-        .quality('auto')
-
-    if (!loggedIn)
-    {
-        right = menu(menuOpen, setMenuOpen);
-    }
-    else
-    {
-        right = welcome(userName);
-    }
-
-
-    return (
-        <header className="header">
-            <div className="header-content">
-                <div className="logo" onClick={() => navigate('/')}>
-                    <AdvancedImage className = 'logo-icon'cldImg={img} />
-                    <span className="logo-text">Oklahoma Rentals</span>
-                </div>
-                {right}
-            </div>
-            {menuOpen && <NavBar />}
-        </header>
-    );
-}
-
-export default Header;

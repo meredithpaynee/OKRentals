@@ -1,4 +1,5 @@
 ﻿import './portal.css'
+import { authFetch } from './auth'
 import { useState, useEffect } from 'react'
 
 
@@ -21,7 +22,7 @@ export function MaintenanceRequests({ property }: props) {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/maintenance-requests')
+        authFetch('/api/maintenance-requests')
             .then(res => {
                 if (!res.ok) throw new Error('Failed to fetch requests')
                 return res.json()
@@ -39,7 +40,7 @@ export function MaintenanceRequests({ property }: props) {
     const handleResolve = (id: number) => {
         const dateResolved = new Date().toISOString();
 
-        fetch(`/api/maintenance-requests/${id}/status`, {
+        authFetch(`/api/maintenance-requests/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'Completed' }),
@@ -109,8 +110,8 @@ export function PreviousPayments({ property }: props) {
 
     useEffect(() => {
         Promise.all([
-            fetch('/api/payments').then(res => res.json()),
-            fetch('/api/tenants').then(res => res.json())
+            authFetch('/api/payments').then(res => res.json()),
+            authFetch('/api/tenants').then(res => res.json())
         ])
             .then(([payments, tenants]) => {
                 const filtered = property
@@ -189,7 +190,7 @@ export function Tenants({ property }: props) {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/tenants')
+        authFetch('/api/tenants')
             .then(res => {
                 if (!res.ok) throw new Error('Failed to fetch requests')
                 return res.json()
@@ -243,7 +244,7 @@ export function CreateProperty() {
         try {
             // Because of the proxy in vite.config.ts, we can just hit /api/...
             // The proxy will forward it to https://localhost:7237/api/...
-            const response = await fetch('/api/properties', {
+            const response = await authFetch('/api/properties', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -336,7 +337,7 @@ export function RemoveProperty({ properties, onDeleted }: { properties: Property
     const handleDelete = async () => {
         if (selectedId == null) return setStatus('Select a property to delete');
         try {
-            const res = await fetch(`/api/properties/${selectedId}`, { method: 'DELETE' });
+            const res = await authFetch(`/api/properties/${selectedId}`, { method: 'DELETE' });
             if (!res.ok) return setStatus(`Delete failed: ${res.status}`);
             setLocalProps(p => p.filter(x => x.id !== selectedId));
             setStatus('Deleted');
@@ -377,7 +378,7 @@ export function CreateTenant() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/properties')
+        authFetch('/api/properties')
             .then(res => res.json())
             .then((data: PropertyResponse[]) => setProperties(data))
             .catch(err => console.error("Failed to load properties", err))
@@ -387,7 +388,7 @@ export function CreateTenant() {
     async function handleCreateTenant() {
         setStatusMessage("Creating...");
         try {
-            const response = await fetch('/api/tenants', {
+            const response = await authFetch('/api/tenants', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -478,7 +479,7 @@ export function RemoveTenant() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/tenants')
+        authFetch('/api/tenants')
             .then(res => {
                 if (!res.ok) throw new Error('Failed to fetch tenants');
                 return res.json();
@@ -493,7 +494,7 @@ export function RemoveTenant() {
     const handleDelete = async () => {
         if (selectedId == null) return setStatus('Select a tenant to delete');
         try {
-            const res = await fetch(`/api/tenants/${selectedId}`, { method: 'DELETE' });
+            const res = await authFetch(`/api/tenants/${selectedId}`, { method: 'DELETE' });
             if (!res.ok) return setStatus(`Delete failed: ${res.status}`);
             setLocalTenants(t => t.filter(x => x.id !== selectedId));
             setStatus('Tenant deleted successfully');
@@ -532,7 +533,7 @@ export function SetPropertyToLeased() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/properties')
+        authFetch('/api/properties')
             .then(res => res.json())
             .then((data: PropertyResponse[]) => setProperties(data))
             .catch(err => console.error("Failed to load properties", err))
@@ -542,7 +543,7 @@ export function SetPropertyToLeased() {
     async function handleUpdateAvailability() {
         setStatusMessage("Updating...");
         try {
-            const response = await fetch(`/api/properties/${propertyId}/availability`, {
+            const response = await authFetch(`/api/properties/${propertyId}/availability`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
@@ -614,13 +615,13 @@ export function RecordPayment() {
     const [loadingProps, setLoadingProps] = useState(true);
 
     useEffect(() => {
-        fetch('/api/tenants')
+        authFetch('/api/tenants')
             .then(res => res.json())
             .then((data: TenantResponse[]) => setAllTenants(data))
             .catch(err => console.error("Failed to load tenants", err))
             .finally(() => setLoadingTenants(false));
 
-        fetch('/api/properties')
+        authFetch('/api/properties')
             .then(res => res.json())
             .then((data: PropertyResponse[]) => {
                 setProperties(data);
@@ -652,7 +653,7 @@ export function RecordPayment() {
 
         setStatusMessage("Recording...");
         try {
-            const response = await fetch('/api/payments', {
+            const response = await authFetch('/api/payments', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

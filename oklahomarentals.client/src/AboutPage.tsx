@@ -1,68 +1,59 @@
-import * as React from 'react';
-import { Cloudinary } from '@cloudinary/url-gen';
-import { AdvancedImage } from '@cloudinary/react';
-import Header from './Header';
-import './about.css';
+import { Link } from 'react-router-dom'
+import SiteLayout, { ContactBand, PageHeader } from './site/SiteLayout'
+import { cloudinaryUrl } from './site/images'
 
 export default function AboutPage() {
-    const cld = new Cloudinary({ cloud: { cloudName: 'djt05lgzv' } });
-
-    const img1 = cld.image('stillwater-downtown.jpg').format('auto').quality('auto');
-    const img2 = cld.image('oklahoma-landscape_jblnki.jpg').format('auto').quality('auto');
-    const img3 = cld.image('stillwater-map.jpg').format('auto').quality('auto');
-    const img4 = cld.image('norman-map.jpg').format('auto').quality('auto');
-
-    const heroStyle = img1
-        ? {
-            backgroundImage: `url(${img1.toURL()})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-        } as React.CSSProperties
-        : undefined;
-
     return (
-        <div className="about-container">
-            <Header />
+        <SiteLayout>
+            <PageHeader title="About us" image="stillwater-downtown.jpg" breadcrumbs={[{ to: '/', label: 'Home' }]} />
 
-            {/* Hero */}
-            <div className="hero-section" style={heroStyle}>
-                <div className="hero-overlay" />
-                <div className="hero-content">
-                    <p className="hero-eyebrow">Welcome to</p>
-                    <h1 className="hero-title">Oklahoma College Rentals</h1>
-                </div>
-            </div>
-
-            {/* Section 1 — Landscape image + intro copy */}
-            <section className="about-section">
-                <div className="about-image-wrap">
-                    <AdvancedImage className="about-image" cldImg={img2} />
-                </div>
-                <div className="about-text">
-                    <span className="section-label">Who We Are</span>
-                    <p>Oklahoma College Rentals is a family-run rental property company specializing in student housing across Oklahoma.</p>
+            <section className="section">
+                <div className="container split">
+                    <div>
+                        <span className="eyebrow">Who we are</span>
+                        <h2>Family-run student housing</h2>
+                        <p>
+                            Oklahoma College Rentals is a family-run rental property company specializing in
+                            student housing across Oklahoma, with homes near the University of Oklahoma in
+                            Norman and Oklahoma State University in Stillwater.
+                        </p>
+                        <p>
+                            We pride ourselves on high-quality properties, strong customer service, and a
+                            genuine personal connection with every tenant. Our goal is to help you find the
+                            right home for your needs.
+                        </p>
+                        <Link className="text-link" to="/contact">Get in touch &rarr;</Link>
+                    </div>
+                    <img className="split-image" src={cloudinaryUrl('oklahoma-landscape_jblnki.jpg', 1200)} alt="Oklahoma landscape" />
                 </div>
             </section>
 
-            {/* Section 2 — copy + two maps */}
-            <section className="about-section reverse">
-                <div className="about-text">
-                    <span className="section-label">Our Promise</span>
-                    <p>We pride ourselves on high-quality properties, strong customer service, and genuine personal connection with every tenant.</p>
-                </div>
-                <div className="about-image-wrap">
-                    <AdvancedImage className="about-image" cldImg={img3} />
-                </div>
-                <div className="about-image-wrap">
-                    <AdvancedImage className="about-image" cldImg={img4} />
+            <section className="section section--surface">
+                <div className="container">
+                    <div className="section-heading">
+                        <span className="eyebrow">Where we are</span>
+                        <h2>Two college towns</h2>
+                    </div>
+                    <div className="map-grid">
+                        <figure>
+                            <img src={cloudinaryUrl('norman-map.jpg', 1000)} alt="Map of Norman, Oklahoma" loading="lazy" />
+                            <figcaption>
+                                <Link to="/properties/Norman">Norman</Link>
+                                <span>University of Oklahoma</span>
+                            </figcaption>
+                        </figure>
+                        <figure>
+                            <img src={cloudinaryUrl('stillwater-map.jpg', 1000)} alt="Map of Stillwater, Oklahoma" loading="lazy" />
+                            <figcaption>
+                                <Link to="/properties/Stillwater">Stillwater</Link>
+                                <span>Oklahoma State University</span>
+                            </figcaption>
+                        </figure>
+                    </div>
                 </div>
             </section>
 
-            {/* Section 3 — CTA strip */}
-            <section className="about-cta">
-                <p>Our goal is to help you find the right home for your needs!</p>
-            </section>
-        </div>
-    );
+            <ContactBand />
+        </SiteLayout>
+    )
 }

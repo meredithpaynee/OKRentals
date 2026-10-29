@@ -1,89 +1,180 @@
+/* Site header. Also rendered on the portal pages, so it carries its own
+   tokens instead of relying on the .site wrapper. */
+.site-header {
+    --hdr-ink: #1f1d1a;
+    --hdr-muted: #5c564e;
+    --hdr-rule: #ddd7cc;
+    --hdr-accent: #7d1d1a;
 
-.header {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 100;
-    width: 100vw;
-
+    width: 100%;
+    background: #fff;
+    border-bottom: 1px solid var(--hdr-rule);
+    font-family: 'Public Sans', system-ui, sans-serif;
+    text-align: left;
+    color: var(--hdr-ink);
 }
 
-.header-content {
-    max-width: 1400px;
+.site-header a,
+.site-header a:hover {
+    color: inherit;
+    text-decoration: none;
+    font-weight: inherit;
+}
+
+.site-header__inner {
+    max-width: 1180px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 0 24px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    gap: 24px;
 }
 
-.logo {
+.site-header__utility {
+    background: var(--hdr-ink);
+    color: #d9d4ca;
+    font-size: 0.8125rem;
+}
+
+.site-header__utility .site-header__inner {
+    min-height: 34px;
+}
+
+.site-header__contact {
     display: flex;
-    gap: 0.75rem;
+    gap: 20px;
 }
 
-.logo-icon{
-    content: '';
-    position: absolute;
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-    margin: 0px 0px 0px 5px;
-    
+.site-header__contact a:hover {
+    color: #fff;
 }
 
-.logo-text {
-    font-size: 1.5rem;
+.site-header__main {
+    min-height: 68px;
+}
+
+.site-header__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 1.25rem;
     font-weight: 600;
-    color: #2c2c2c;
-    letter-spacing: -0.5px;
-    padding-left: 3.5rem;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
 }
 
-.nav-bar {
-    z-index: 1000;
-}
-
-.menu-toggle {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.menu-toggle span {
-    width: 28px;
-    height: 3px;
-    background: #2c2c2c;
+.site-header__brand img {
+    display: block;
     border-radius: 2px;
-    transition: all 0.3s ease;
 }
 
-.menu-toggle:hover span {
-    background: #d14e24;
+.site-header__nav {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    font-size: 0.9375rem;
 }
 
-@media (max-width: 768px) {
-    .header-content {
-        padding: 1rem 1.5rem;
+.site-header__nav a {
+    padding: 6px 0;
+    border-bottom: 2px solid transparent;
+    color: var(--hdr-muted);
+}
+
+.site-header__nav a:hover,
+.site-header__nav a.active {
+    color: var(--hdr-ink);
+    border-bottom-color: var(--hdr-accent);
+}
+
+.site-header__portal,
+.site-header__toggle {
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--hdr-ink);
+    background: #fff;
+    border: 1px solid var(--hdr-ink);
+    border-radius: 2px;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+.site-header__portal:hover,
+.site-header__toggle:hover {
+    background: var(--hdr-ink);
+    color: #fff;
+    border-color: var(--hdr-ink);
+}
+
+.site-header__toggle {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .site-header__utility span:first-child {
+        display: none;
     }
 
-    .logo-text {
-        font-size: 1.25rem;
+    .site-header__utility .site-header__inner {
+        justify-content: flex-end;
     }
 
-    .logo-icon {
-        width: 35px;
-        height: 35px;
+    .site-header__main {
+        flex-wrap: wrap;
+        gap: 0;
     }
 
-    .logo-icon::before {
-        width: 17px;
-        height: 17px;
+    .site-header__toggle {
+        display: block;
+    }
+
+    .site-header__nav {
+        display: none;
+        flex-basis: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 8px 0 20px;
+        border-top: 1px solid var(--hdr-rule);
+    }
+
+    .site-header__nav.is-open {
+        display: flex;
+    }
+
+    .site-header__nav a {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--hdr-rule);
+        font-size: 1rem;
+    }
+
+    .site-header__nav a.active {
+        border-bottom-color: var(--hdr-rule);
+        color: var(--hdr-accent);
+    }
+
+    .site-header__portal {
+        margin-top: 16px;
+        padding: 12px 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-header__inner {
+        padding: 0 16px;
+    }
+
+    .site-header__brand {
+        font-size: 1.0625rem;
+    }
+
+    .site-header__contact a[href^='mailto'] {
+        display: none;
     }
 }

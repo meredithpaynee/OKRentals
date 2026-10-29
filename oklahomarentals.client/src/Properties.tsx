@@ -1,116 +1,98 @@
-import { Cloudinary } from '@cloudinary/url-gen';
-import { AdvancedImage } from '@cloudinary/react';
-import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { useNavigate } from 'react-router-dom'
-import Header from './Header'
-import './properties.css'
-
-interface PropertyResponse {
-    id: number
-    name: string
-    campus: string
-    bedrooms: number
-    bathrooms: number
-    price: number
-    address: string
-    description: string
-    isLeased: boolean
-    nextAvailable: string
-}
-
-interface CloudinaryImage {
-    publicId: string
-    secureUrl: string
-}
+import { useEffect, useState } from 'react'
+import { Link, NavLink, useParams } from 'react-router-dom'
+import SiteLayout, { PageHeader } from './site/SiteLayout'
+import { CAMPUSES, findCampus } from './site/siteInfo'
+import { availabilityLabel, fetchImages, formatRent, useProperties, type PropertyResponse } from './site/api'
+import { sizedUrl } from './site/images'
 
 export default function Properties() {
-    const navigate = useNavigate();
-    const { location: routeLocation } = useParams<{ location?: string }>();
-    const [properties, setProperties] = useState<PropertyResponse[]>([]);
+    const { location } = useParams<{ location?: string }>()
+    const campus = findCampus(location)
+    const { data, loading, error } = useProperties()
 
-    const [images, setImages] = useState<CloudinaryImage[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-
-    const prev = () => setCurrentIndex(i => (i === 0 ? images.length - 1 : i - 1));
-    const next = () => setCurrentIndex(i => (i === images.length - 1 ? 0 : i + 1));
-
-
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-
-
-    useEffect(() => {
-        fetch('/api/properties')
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch properties')
-                return res.json()
-            })
-            .then((data: PropertyResponse[]) => {
-                const filtered = routeLocation
-                    ? data.filter(p => p.campus.toLowerCase() === routeLocation.toLowerCase())
-                    : data;
-                setProperties(filtered);
-            })
-            .catch(err => setError(err.message))
-            .finally(() => setLoading(false));
-    }, [routeLocation]);
-
-    if (loading) return <div>Loading...</div>
-    if (error) return <div>Error: {error}</div>
-
-    const cld = new Cloudinary({ cloud: { cloudName: 'djt05lgzv' } });
-
-    // Use this sample image or upload your own via the Media Library
-    let img;
-
-    if (routeLocation.toLowerCase() == "norman") {
-        img = cld
-            .image('norman-enter_l8zewm.jpg')
-            .format('auto')
-            .quality('auto')
-    }
-    else {
-        img = cld
-            .image('stillwater-enter_hbatzr.jpg')
-            .format('auto')
-            .quality('auto')
-    }
-
-    const heroStyle = img
-        ? {
-            backgroundImage: `url(${img.toURL()})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-        } as React.CSSProperties
-        : undefined;
+    const properties = campus ? data.filter(p => p.campus.toLowerCase() === campus.slug.toLowerCase()) : data
+    const title = campus ? `${campus.name} properties` : 'Properties'
 
     return (
-        <div className='properties-container'>
-            <Header />
-            <div className="hero-section" style={heroStyle}>
-                <div className="hero-overlay"></div>
-                <div className="hero-content">
-                    <h1 className = 'hero-title'>{routeLocation ? `${routeLocation} Properties` : 'Properties'}</h1>
+        <SiteLayout>
+            <PageHeader
+                title={title}
+                intro={campus ? `Rentals near the ${campus.school}.` : undefined}
+                image={campus?.image}
+                breadcrumbs={[{ to: '/', label: 'Home' }]}
+            />
+
+            <section className="section">
+                <div className="container">
+                    <div className="listing-toolbar">
+                        <nav className="campus-tabs" aria-label="Campus">
+                            {CAMPUSES.map(c => (
+                                <NavLink key={c.slug} to={`/properties/${c.slug}`}>{c.name}</NavLink>
+                            ))}
+                        </nav>
+                        {!loading && !error && (
+                            <span className="listing-count">
+                                {properties.length} {properties.length === 1 ? 'property' : 'properties'}
+                            </span>
+                        )}
+                    </div>
+
+                    {loading && (
+                        <div className="listing-grid" aria-busy="true">
+                            {[0, 1, 2].map(i => <div key={i} className="skeleton" />)}
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="notice">
+                            <h2>We couldn't load properties right now</h2>
+                            <p>Please refresh the page, or <Link to="/contact">contact us</Link> for current availability.</p>
+                        </div>
+                    )}
+
+                    {!loading && !error && properties.length === 0 && (
+                        <div className="notice">
+                            <h2>No properties listed here yet</h2>
+                            <p>Check back soon, or <Link to="/contact">contact us</Link> about upcoming availability.</p>
+                        </div>
+                    )}
+
+                    {!loading && !error && properties.length > 0 && (
+                        <div className="listing-grid">
+                            {properties.map(property => <ListingCard key={property.id} property={property} />)}
+                        </div>
+                    )}
+                </div>
+            </section>
+        </SiteLayout>
+    )
+}
+
+function ListingCard({ property }: { property: PropertyResponse }) {
+    const [cover, setCover] = useState<string | null>(null)
+
+    useEffect(() => {
+        fetchImages(property.name)
+            .then(imgs => setCover(imgs[0]?.secureUrl ?? null))
+            .catch(() => setCover(null))
+    }, [property.name])
+
+    return (
+        <Link className="listing-card" to={`/property/${encodeURIComponent(property.name)}`}>
+            {cover
+                ? <img className="listing-card__image" src={sizedUrl(cover, 800)} alt="" loading="lazy" />
+                : <div className="listing-card__image" />}
+            <div className="listing-card__body">
+                <span className={`status${property.isLeased ? '' : ' status--available'}`}>
+                    {availabilityLabel(property)}
+                </span>
+                <h3>{property.name}</h3>
+                <span className="listing-card__address">{property.address}</span>
+                <div className="listing-card__meta">
+                    <span className="listing-card__price">{formatRent(property.price)}<span> /mo</span></span>
+                    <span className="listing-card__specs">{property.bedrooms} bd · {property.bathrooms} ba</span>
                 </div>
             </div>
-
-            {properties.map((property) => (
-                <div className='properties' key={property.id}>
-                    <div className='property-info'>
-                        <div className='property-content'>
-                            <h2>{property.name}</h2>
-                            <p>{property.bedrooms} bed / {property.bathrooms} bath</p>
-                        </div>
-                        <button onClick={() => navigate(`/property/${property.name}`)}>More information</button>
-                    </div>
-                    <hr className = 'divider'></hr>
-                </div>
-            ))}
-
-            {properties.length === 0 && <p>No properties found for this campus.</p>}
-        </div>
-    );
+        </Link>
+    )
 }

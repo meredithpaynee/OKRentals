@@ -1,0 +1,61 @@
+{
+  "realm": "oklahoma-rentals",
+  "displayName": "Oklahoma College Rentals",
+  "enabled": true,
+  "sslRequired": "external",
+  "loginTheme": "oklahoma-rentals",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      { "name": "tenant", "description": "Current resident with access to the tenant portal" },
+      { "name": "admin", "description": "Staff with access to the admin portal" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "oklahoma-rentals-frontend",
+      "name": "Oklahoma Rentals website",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "https://localhost:52106",
+      "redirectUris": ["https://localhost:52106/*"],
+      "webOrigins": ["https://localhost:52106"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://localhost:52106/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "backend-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "oklahoma-rentals-backend",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "oklahoma-rentals-backend",
+      "name": "Oklahoma Rentals API",
+      "enabled": true,
+      "bearerOnly": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    }
+  ]
+}

@@ -27,7 +27,11 @@ export default function App() {
 
 
                 <Route path="/portal/:access" element={<PortalHome access={""} address="1405 Garland Ave" />} />
-                <Route path="/portal/admin" element={<AdminPortal />} />
+                <Route path="/portal/admin" element={
+                    <ProtectedRoute>
+                        <AdminPortal />
+                    </ProtectedRoute>
+                } />
                 <Route path="/:username/make-payment" element={<Payment />} />
 
                 <Route path="/properties/:location" element={<Properties />} />

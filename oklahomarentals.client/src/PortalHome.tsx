@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { authFetch } from './auth'
 import './portal.css'
 import Header from "./Header"
 import NavPortal from "./NavPortal"
@@ -42,7 +43,7 @@ export default function PortalHome(props: Props) {
         try {
             // Because of the proxy in vite.config.ts, we can just hit /api/...
             // The proxy will forward it to https://localhost:7237/api/...
-            const response = await fetch('/api/maintenance-requests', {
+            const response = await authFetch('/api/maintenance-requests', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -76,7 +77,7 @@ export default function PortalHome(props: Props) {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/maintenance-requests?propertyId=1')
+        authFetch('/api/maintenance-requests?propertyId=1')
             .then(res => { if (!res.ok) throw new Error('Failed to fetch requests'); return res.json(); })
             .then((data: MaintenanceRequestResponse[]) => {
                 const filtered = id
@@ -199,7 +200,7 @@ function PreviousPayments() {
     };
 
     useEffect(() => {
-        fetch('/api/payments?TenantID=123')
+        authFetch('/api/payments?TenantID=123')
             .then(res => { if (!res.ok) throw new Error('Failed to fetch requests'); return res.json(); })
             .then((data: PaymentResponse[]) => {
                 const formatted = data.map(p => ({
