@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { authFetch } from './auth'
 import './portal.css'
 import Header from "./Header"
 import { useState, useEffect } from 'react'
@@ -42,7 +43,7 @@ export default function AdminPortal() {
     }
 
     useEffect(() => {
-        fetch('/api/properties')
+        authFetch('/api/properties')
             .then(res => {
                 if (!res.ok) throw new Error('Failed to fetch properties')
                 return res.json()

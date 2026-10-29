@@ -2,14 +2,16 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
     container_name: keycloak
-    command: start-dev
+    # Imports keycloak/oklahoma-rentals-realm.json on first start; an existing realm is left alone.
+    command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
     ports:
       - "8080:8080"
     volumes:
       - ./keycloak-theme/oklahoma-rentals:/opt/keycloak/themes/oklahoma-rentals
+      - ./keycloak/oklahoma-rentals-realm.json:/opt/keycloak/data/import/oklahoma-rentals-realm.json:ro
       - keycloak_data:/opt/keycloak/data
 
 volumes:
