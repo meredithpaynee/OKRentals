@@ -1,3 +1,18 @@
+/* Resets the old page stylesheets used to apply globally; the portal pages rely on them. */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+input {
+  margin: 4px;
+}
+
+hr {
+  margin: 10px;
+  border-width: 1.5px;
+}
 
 :root {
   font-family: Montserrat, "Montserrat Fallback";
@@ -14,7 +29,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
 
 a {
   font-weight: 500;

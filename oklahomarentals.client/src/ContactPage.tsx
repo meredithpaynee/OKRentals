@@ -1,9 +1,5 @@
-import { Cloudinary } from '@cloudinary/url-gen';
-import { AdvancedImage } from '@cloudinary/react';
-import * as React from 'react';
-import './contactpage.css'
-import Header from './Header'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import SiteLayout, { PageHeader } from './site/SiteLayout'
 
 interface props {
     email: string;
@@ -11,50 +7,40 @@ interface props {
 }
 
 export default function ContactPage(props: props) {
-    const navigate = useNavigate();
-
-    const cld = new Cloudinary({ cloud: { cloudName: 'djt05lgzv' } });
-
-    const img = cld
-        .image('norman-downtown_ys47pm.jpg')
-        .format('auto')
-        .quality('auto')
-
-    const heroStyle = img
-        ? {
-            backgroundImage: `url(${img.toURL()})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-        } as React.CSSProperties
-        : undefined;
-
     return (
-        <div className="contact-page">
-            <Header />
-            <div className="hero-section" style={heroStyle}>
-                <div className="hero-overlay"></div>
-                <div className="hero-content">
-                    <h1 className="hero-title">Contact Us</h1>
-                </div>
-            </div>
-            
+        <SiteLayout>
+            <PageHeader
+                title="Contact us"
+                intro="Questions about a property, a showing, or your application? We're happy to help."
+                image="norman-downtown_ys47pm.jpg"
+                breadcrumbs={[{ to: '/', label: 'Home' }]}
+            />
 
-            <h2> Have an inquiry about a property or renting? Contact us at:</h2>
-            <div className='contactInfo'>
-                <div className='contact-card'>
-                    <h4>Email</h4>
-                    <p> {props.email}</p>
+            <section className="section">
+                <div className="container split">
+                    <div>
+                        <h2>Reach us directly</h2>
+                        <ul className="contact-list">
+                            <li><span>Phone</span><a href={`tel:${props.phone}`}>{props.phone}</a></li>
+                            <li><span>Email</span><a href={`mailto:${props.email}`}>{props.email}</a></li>
+                            <li><span>Locations</span><span>Norman and Stillwater, Oklahoma</span></li>
+                        </ul>
+                    </div>
+                    <div className="stack">
+                        <div className="panel">
+                            <h3>Ready to apply?</h3>
+                            <p>One application covers any of our properties.</p>
+                            <Link className="button" to="/apply">Start an application</Link>
+                        </div>
+                        <div className="panel">
+                            <h3>Current residents</h3>
+                            <p>
+                                Submit maintenance requests and view your payment history in the resident portal.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <div className='contact-card'>
-                    <h4>Call</h4>
-                    <p> {props.phone}</p>
-                </div>
-                <div className='contact-card'>
-                    <h4>Apply</h4>
-                    <button className="btn" onClick={() => navigate('/apply')}>Apply to Rent</button>
-                </div>
-            </div>
-        </div>
+            </section>
+        </SiteLayout>
     )
 }
