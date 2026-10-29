@@ -1,0 +1,89 @@
+
+.header {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100vw;
+
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.logo-icon{
+    content: '';
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    margin: 0px 0px 0px 5px;
+    
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c2c2c;
+    letter-spacing: -0.5px;
+    padding-left: 3.5rem;
+}
+
+.nav-bar {
+    z-index: 1000;
+}
+
+.menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.menu-toggle span {
+    width: 28px;
+    height: 3px;
+    background: #2c2c2c;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.menu-toggle:hover span {
+    background: #d14e24;
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        padding: 1rem 1.5rem;
+    }
+
+    .logo-text {
+        font-size: 1.25rem;
+    }
+
+    .logo-icon {
+        width: 35px;
+        height: 35px;
+    }
+
+    .logo-icon::before {
+        width: 17px;
+        height: 17px;
+    }
+}

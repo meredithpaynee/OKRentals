@@ -1,0 +1,16 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak-theme/oklahoma-rentals:/opt/keycloak/themes/oklahoma-rentals
+      - keycloak_data:/opt/keycloak/data
+
+volumes:
+  keycloak_data:

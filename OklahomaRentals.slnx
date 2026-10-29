@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="oklahomarentals.client/oklahomarentals.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="OklahomaRentals.Server/OklahomaRentals.Server.csproj" />
+</Solution>

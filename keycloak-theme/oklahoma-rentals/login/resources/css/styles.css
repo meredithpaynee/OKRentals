@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lato:wght@400;700&display=swap');
+
+#kc-header-wrapper {
+    font-family: 'Lato', sans-serif !important;
+    background: linear-gradient(to bottom left, #9d6b6b 49%, #f5954a 50%) !important;
+}
+
+#kc-login {
+    background-color: #9d6b6b !important;
+    border-color: #9d6b6b !important;
+    font-family: 'Lato', sans-serif !important;
+}
+
+    #kc-login:hover {
+        background-color: #8a5858 !important;
+    }
+
+.card-pf {
+    border-top: 4px solid #f5954a !important;
+}
+
+#kc-page-title {
+    'Lato', sans-serif !important;
+    color: #2c2c2c !important;
+}
+
+a {
+    color: #9d6b6b !important;
+}
+
+    a:hover {
+        color: #8a5858 !important;
+    }
+
+body {
+    background: #f8f8f8 !important;
+    font-family: 'Lato', sans-serif !important;
+}
