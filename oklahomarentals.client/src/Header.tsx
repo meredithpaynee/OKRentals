@@ -1,18 +1,17 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from 'react-oidc-context'
 import { CAMPUSES, CONTACT_EMAIL, CONTACT_PHONE, SITE_NAME } from './site/siteInfo'
 import './header.css'
 
 export default function Header() {
     const navigate = useNavigate()
-    const auth = useAuth()
     const [menuOpen, setMenuOpen] = useState(false)
 
+    // /portal is a ProtectedRoute, which sends signed-out visitors to Keycloak
+    // and shows an error if Keycloak can't be reached.
     const openPortal = () => {
         setMenuOpen(false)
-        if (auth.isAuthenticated) navigate('/portal')
-        else auth.signinRedirect()
+        navigate('/portal')
     }
 
     const links = [
