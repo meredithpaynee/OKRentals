@@ -5,6 +5,8 @@ using OklahomaRentals.Server.Services.Implementations;
 using OklahomaRentals.Server.Repositories.Interfaces;  
 using OklahomaRentals.Server.Repositories.Implementations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +57,16 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMaintenanceRequestRepository, MaintenanceRequestRepository>();
 
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IApplicationEmailService, ApplicationEmailService>();
+
+// The public application form sends email, so cap submissions per visitor.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("applications", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(15) }));
+});
 
 // Add CORS for React frontend port 52106
 builder.Services.AddCors(options =>
@@ -96,6 +108,8 @@ app.UseCors("AllowReactApp");
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapControllers();
 
