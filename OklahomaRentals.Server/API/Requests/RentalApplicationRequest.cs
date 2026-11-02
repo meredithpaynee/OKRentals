@@ -17,7 +17,7 @@ namespace OklahomaRentals.Server.API.Requests
         [MaxLength(10)] public string? ExpectedGraduation { get; set; }
 
         [Required, MaxLength(200)] public string Property { get; set; } = string.Empty;
-        [MaxLength(10)] public string? LeaseStart { get; set; }
+        [Required, MaxLength(10)] public string LeaseStart { get; set; } = string.Empty;
         [MaxLength(50)] public string? LeaseTerm { get; set; }
 
         public ResidenceHistory? CurrentResidence { get; set; }

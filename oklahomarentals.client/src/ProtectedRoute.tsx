@@ -2,6 +2,10 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { useAuth } from 'react-oidc-context'
 import SiteLayout from './site/SiteLayout'
 
+// Remember the current page so main.tsx can return here after Keycloak.
+const signIn = (auth: ReturnType<typeof useAuth>) =>
+    auth.signinRedirect({ state: { returnTo: window.location.pathname } })
+
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
     const auth = useAuth()
     const needsLogin = !auth.isLoading && !auth.isAuthenticated && !auth.activeNavigator && !auth.error
@@ -12,7 +16,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!needsLogin || redirecting.current) return
         redirecting.current = true
-        auth.signinRedirect().catch(err => {
+        signIn(auth).catch(err => {
             redirecting.current = false
             console.error('Sign-in redirect failed', err)
         })
@@ -25,7 +29,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
                 <div className="container notice">
                     <h2>Sign-in isn't available right now</h2>
                     <p>We couldn't reach the sign-in service. Please try again in a moment.</p>
-                    <button className="button" onClick={() => auth.signinRedirect().catch(() => {})}>
+                    <button className="button" onClick={() => signIn(auth).catch(() => {})}>
                         Try again
                     </button>
                 </div>

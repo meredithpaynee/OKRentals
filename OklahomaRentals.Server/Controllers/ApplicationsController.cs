@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using OklahomaRentals.Server.API.Requests;
@@ -7,6 +8,9 @@ using OklahomaRentals.Server.API.Response;
 
 namespace OklahomaRentals.Server.Controllers
 {
+    // Applications hold applicants' personal details, so everything except the
+    // public submit endpoint requires a signed-in user.
+    [Authorize]
     [ApiController]
     [Route("api/applications")]
     public class ApplicationsController : ControllerBase
@@ -25,7 +29,8 @@ namespace OklahomaRentals.Server.Controllers
             _logger = logger;
         }
 
-        // Public "Apply to rent" form: emails the application to the office.
+        // Public "Apply to rent" form: saves the application, then emails it to the office.
+        [AllowAnonymous]
         [HttpPost("submit")]
         [EnableRateLimiting("applications")]
         public async Task<IActionResult> Submit([FromBody] RentalApplicationRequest application)
@@ -37,16 +42,52 @@ namespace OklahomaRentals.Server.Controllers
             if (!string.IsNullOrEmpty(application.Website))
                 return Accepted();
 
+            ApplicationResponse? saved = null;
             try
             {
-                await _applicationEmailService.SendAsync(application);
-                return Accepted();
+                saved = await _applicationService.SubmitAsync(application);
+            }
+            catch (ArgumentException ex)
+            {
+                ModelState.AddModelError(ex.ParamName ?? string.Empty, ex.Message);
+                return ValidationProblem(ModelState);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to email rental application");
+                _logger.LogError(ex, "Failed to save rental application");
+            }
+
+            var emailed = false;
+            try
+            {
+                await _applicationEmailService.SendAsync(application);
+                emailed = true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to email rental application {Id}", saved?.Id);
+            }
+
+            // Either one is enough for the office to see the application.
+            if (saved == null && !emailed)
+            {
                 return StatusCode(StatusCodes.Status503ServiceUnavailable,
                     new { message = "We couldn't send your application right now." });
+            }
+            return Accepted();
+        }
+
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] ApplicationStatusRequest request)
+        {
+            try
+            {
+                var updated = await _applicationService.UpdateStatusAsync(id, request.Status);
+                return updated == null ? NotFound() : Ok(updated);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
 

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { authFetch } from './auth'
 import PortalLayout, { Badge, Dialog, Empty, LoadError, Panel, Stat } from './portal/PortalLayout'
 import { formatDate, formatMoney, isOpenRequest } from './portal/format'
-import type { MaintenanceRequestResponse, PaymentResponse, PropertyResponse, TenantResponse } from './portal/types'
+import type { ApplicationResponse, MaintenanceRequestResponse, PaymentResponse, PropertyResponse, TenantResponse } from './portal/types'
+import ApplicationDetails from './portal/ApplicationDetails'
 import { CreateProperty, RemoveProperty, CreateTenant, RemoveTenant, SetPropertyToLeased, RecordPayment } from './AdminPortalFunctionality'
 
 interface AdminData {
@@ -10,6 +11,7 @@ interface AdminData {
     tenants: TenantResponse[]
     payments: PaymentResponse[]
     requests: MaintenanceRequestResponse[]
+    applications: ApplicationResponse[]
 }
 
 type Action = 'createProperty' | 'removeProperty' | 'setLeased' | 'createTenant' | 'removeTenant' | 'recordPayment'
@@ -34,6 +36,7 @@ export default function AdminPortal() {
     const [data, setData] = useState<AdminData | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [action, setAction] = useState<Action | null>(null)
+    const [openApplicationId, setOpenApplicationId] = useState<number | null>(null)
 
     const load = useCallback(() => {
         Promise.all([
@@ -41,9 +44,10 @@ export default function AdminPortal() {
             getJson<TenantResponse[]>('/api/tenants'),
             getJson<PaymentResponse[]>('/api/payments'),
             getJson<MaintenanceRequestResponse[]>('/api/maintenance-requests'),
+            getJson<ApplicationResponse[]>('/api/applications'),
         ])
-            .then(([properties, tenants, payments, requests]) => {
-                setData({ properties, tenants, payments, requests })
+            .then(([properties, tenants, payments, requests, applications]) => {
+                setData({ properties, tenants, payments, requests, applications })
                 setError(null)
             })
             .catch(err => setError(err.message))
@@ -70,12 +74,15 @@ export default function AdminPortal() {
     const outstanding = data?.payments.reduce((sum, p) => sum + Math.max(p.amountDue - p.amountPaid, 0), 0) ?? 0
     const openRequests = data?.requests.filter(r => isOpenRequest(r.status)) ?? []
     const leased = data?.properties.filter(p => p.isLeased).length ?? 0
+    const pendingApplications = data?.applications.filter(a => a.status === 'Pending').length ?? 0
+    const openApplication = data?.applications.find(a => a.id === openApplicationId)
 
     return (
         <PortalLayout
             title="Admin"
             subtitle="Properties, tenants, payments, and maintenance."
             sections={[
+                { id: 'applications', label: 'Applications' },
                 { id: 'properties', label: 'Properties' },
                 { id: 'payments', label: 'Payments' },
                 { id: 'maintenance', label: 'Maintenance' },
@@ -90,11 +97,40 @@ export default function AdminPortal() {
             {data && (
                 <>
                     <div className="stats">
+                        <Stat label="New applications" value={pendingApplications} note="Awaiting review" />
                         <Stat label="Properties" value={data.properties.length} note={`${leased} leased`} />
                         <Stat label="Tenants" value={data.tenants.length} />
                         <Stat label="Outstanding rent" value={formatMoney(outstanding)} />
                         <Stat label="Open maintenance" value={openRequests.length} />
                     </div>
+
+                    <Panel id="applications" title="Rental applications">
+                        {data.applications.length === 0 ? <Empty>No applications yet. Ones submitted on the Apply page will show up here.</Empty> : (
+                            <div className="table-wrap">
+                                <table className="data-table">
+                                    <thead>
+                                        <tr><th>Applicant</th><th>Property</th><th>Move-in</th><th>Submitted</th><th>Status</th><th><span className="visually-hidden">Actions</span></th></tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.applications.map(a => (
+                                            <tr key={a.id}>
+                                                <td>{a.name}<span className="cell-sub">{a.email}</span></td>
+                                                <td>{a.propertyName ?? propertyName(a.propertyId)}</td>
+                                                <td className="nowrap">{formatDate(a.moveInDate)}</td>
+                                                <td className="nowrap">{formatDate(a.dateSubmitted)}</td>
+                                                <td><Badge>{a.status}</Badge></td>
+                                                <td className="num">
+                                                    <button className="button button--small button--outline" onClick={() => setOpenApplicationId(a.id)}>
+                                                        View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </Panel>
 
                     <Panel
                         id="properties"
@@ -223,6 +259,12 @@ export default function AdminPortal() {
                         <Empty>Lease documents will appear here.</Empty>
                     </Panel>
                 </>
+            )}
+
+            {openApplication && (
+                <Dialog title={`Application from ${openApplication.name}`} onClose={() => setOpenApplicationId(null)}>
+                    <ApplicationDetails application={openApplication} onStatusChanged={load} />
+                </Dialog>
             )}
 
             {action && data && (

@@ -42,7 +42,7 @@ namespace OklahomaRentals.Server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Admins", (string)null);
+                    b.ToTable("Admins");
                 });
 
             modelBuilder.Entity("OklahomaRentals.Server.Data.Entities.Application", b =>
@@ -53,21 +53,56 @@ namespace OklahomaRentals.Server.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool?>("Bankruptcy")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTime>("BirthDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool?>("BrokenLease")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("College")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool?>("Convicted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTime>("DateSubmitted")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("DriversLicense")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
+                    b.Property<bool?>("Evicted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("ExpectedGraduation")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Explanation")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("LeaseTerm")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Major")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<DateTime>("MoveInDate")
                         .HasColumnType("datetime(6)");
@@ -97,7 +132,7 @@ namespace OklahomaRentals.Server.Migrations
 
                     b.HasIndex("PropertyId");
 
-                    b.ToTable("Applications", (string)null);
+                    b.ToTable("Applications");
                 });
 
             modelBuilder.Entity("OklahomaRentals.Server.Data.Entities.Document", b =>
@@ -136,7 +171,7 @@ namespace OklahomaRentals.Server.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Documents", (string)null);
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("OklahomaRentals.Server.Data.Entities.MaintenanceRequest", b =>
@@ -180,7 +215,7 @@ namespace OklahomaRentals.Server.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("MaintenanceRequests", (string)null);
+                    b.ToTable("MaintenanceRequests");
                 });
 
             modelBuilder.Entity("OklahomaRentals.Server.Data.Entities.Payment", b =>
@@ -220,7 +255,7 @@ namespace OklahomaRentals.Server.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("OklahomaRentals.Server.Data.Entities.Property", b =>
@@ -273,7 +308,7 @@ namespace OklahomaRentals.Server.Migrations
 
                     b.HasIndex("AdminId");
 
-                    b.ToTable("Properties", (string)null);
+                    b.ToTable("Properties");
                 });
 
             modelBuilder.Entity("OklahomaRentals.Server.Data.Entities.Tenant", b =>
@@ -315,7 +350,7 @@ namespace OklahomaRentals.Server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Tenants", (string)null);
+                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("OklahomaRentals.Server.Data.Entities.User", b =>
@@ -348,7 +383,7 @@ namespace OklahomaRentals.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("OklahomaRentals.Server.Data.Entities.Admin", b =>
@@ -369,6 +404,80 @@ namespace OklahomaRentals.Server.Migrations
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.OwnsOne("OklahomaRentals.Server.Data.Entities.ResidenceRecord", "CurrentResidence", b1 =>
+                        {
+                            b1.Property<int>("ApplicationId")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Address")
+                                .HasMaxLength(300)
+                                .HasColumnType("varchar(300)");
+
+                            b1.Property<DateTime?>("From")
+                                .HasColumnType("datetime(6)");
+
+                            b1.Property<string>("Landlord")
+                                .HasMaxLength(200)
+                                .HasColumnType("varchar(200)");
+
+                            b1.Property<string>("LandlordContact")
+                                .HasMaxLength(200)
+                                .HasColumnType("varchar(200)");
+
+                            b1.Property<string>("ReasonForLeaving")
+                                .HasMaxLength(500)
+                                .HasColumnType("varchar(500)");
+
+                            b1.Property<DateTime?>("To")
+                                .HasColumnType("datetime(6)");
+
+                            b1.HasKey("ApplicationId");
+
+                            b1.ToTable("Applications");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ApplicationId");
+                        });
+
+                    b.OwnsOne("OklahomaRentals.Server.Data.Entities.ResidenceRecord", "PreviousResidence", b1 =>
+                        {
+                            b1.Property<int>("ApplicationId")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Address")
+                                .HasMaxLength(300)
+                                .HasColumnType("varchar(300)");
+
+                            b1.Property<DateTime?>("From")
+                                .HasColumnType("datetime(6)");
+
+                            b1.Property<string>("Landlord")
+                                .HasMaxLength(200)
+                                .HasColumnType("varchar(200)");
+
+                            b1.Property<string>("LandlordContact")
+                                .HasMaxLength(200)
+                                .HasColumnType("varchar(200)");
+
+                            b1.Property<string>("ReasonForLeaving")
+                                .HasMaxLength(500)
+                                .HasColumnType("varchar(500)");
+
+                            b1.Property<DateTime?>("To")
+                                .HasColumnType("datetime(6)");
+
+                            b1.HasKey("ApplicationId");
+
+                            b1.ToTable("Applications");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ApplicationId");
+                        });
+
+                    b.Navigation("CurrentResidence");
+
+                    b.Navigation("PreviousResidence");
 
                     b.Navigation("Property");
                 });
