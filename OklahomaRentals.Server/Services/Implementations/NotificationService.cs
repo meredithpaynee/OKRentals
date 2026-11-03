@@ -11,10 +11,34 @@ namespace OklahomaRentals.Server.Services.Implementations
     public class NotificationService : INotificationService
     {
         private readonly IConfiguration _config;
+        private readonly ILogger<NotificationService> _logger;
 
-        public NotificationService(IConfiguration config)
+        public NotificationService(IConfiguration config, ILogger<NotificationService> logger)
         {
             _config = config;
+            _logger = logger;
+        }
+
+        // Notifications are best-effort: a missing API key or a Pingram outage is
+        // logged, never thrown, so the request that triggered it still succeeds.
+        private async Task SendAsync(SenderPostBody body)
+        {
+            var apiKey = _config["Pingram:ApiKey"];
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                _logger.LogWarning("Pingram:ApiKey is not set; skipping {Type} notification", body.Type);
+                return;
+            }
+
+            try
+            {
+                var client = new PingramClient(apiKey, "https://api.pingram.io");
+                await client.SendAsync(body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send {Type} notification", body.Type);
+            }
         }
 
         public async Task SendMaintenanceRequestSubmittedAsync(
@@ -27,12 +51,6 @@ namespace OklahomaRentals.Server.Services.Implementations
             string requestPriority,
             string requestDescription)
         {
-            var apiKey = _config["Pingram:ApiKey"];
-            if (string.IsNullOrEmpty(apiKey))
-                throw new Exception("Pingram API Key is missing.");
-
-            var client = new PingramClient(apiKey, "https://api.pingram.io");
-
             var body = new SenderPostBody
             {
                 Type = "maintenance_request_submitted",
@@ -53,7 +71,7 @@ namespace OklahomaRentals.Server.Services.Implementations
                 TemplateId = "template_one"
             };
 
-            await client.SendAsync(body);
+            await SendAsync(body);
         }
 
         public async Task SendMaintenanceRequestStatusUpdateAsync(
@@ -65,12 +83,6 @@ namespace OklahomaRentals.Server.Services.Implementations
             string requestStatus,
             string requestDescription)
         {
-            var apiKey = _config["Pingram:ApiKey"];
-            if (string.IsNullOrEmpty(apiKey))
-                throw new Exception("Pingram API Key is missing.");
-
-            var client = new PingramClient(apiKey, "https://api.pingram.io");
-
             var body = new SenderPostBody
             {
                 Type = "maintenance_request_status_update",
@@ -90,7 +102,7 @@ namespace OklahomaRentals.Server.Services.Implementations
                 TemplateId = "template_one"
             };
 
-            await client.SendAsync(body);
+            await SendAsync(body);
         }
 
         public async Task SendApplicationSubmittedAsync(
@@ -104,12 +116,6 @@ namespace OklahomaRentals.Server.Services.Implementations
             string moveInDate
         )
         {
-            var apiKey = _config["Pingram:ApiKey"];
-            if (string.IsNullOrEmpty(apiKey))
-                throw new Exception("Pingram API Key is missing.");
-
-            var client = new PingramClient(apiKey, "https://api.pingram.io");
-
             var body = new SenderPostBody
             {
                 Type = "application_submitted",
@@ -130,7 +136,7 @@ namespace OklahomaRentals.Server.Services.Implementations
                 TemplateId = "template_one"
             };
 
-            await client.SendAsync(body);
+            await SendAsync(body);
         }
 
         public async Task SendPaymentSubmittedAsync(
@@ -143,12 +149,6 @@ namespace OklahomaRentals.Server.Services.Implementations
             string paymentDate
         )
         {
-            var apiKey = _config["Pingram:ApiKey"];
-            if (string.IsNullOrEmpty(apiKey))
-                throw new Exception("Pingram API Key is missing.");
-
-            var client = new PingramClient(apiKey, "https://api.pingram.io");
-
             var body = new SenderPostBody
             {
                 Type = "payment_submitted",
@@ -168,7 +168,7 @@ namespace OklahomaRentals.Server.Services.Implementations
                 TemplateId = "template_one"
             };
 
-            await client.SendAsync(body);
+            await SendAsync(body);
         }
 
         public async Task SendTenantDocumentUploadedAsync(
@@ -181,12 +181,6 @@ namespace OklahomaRentals.Server.Services.Implementations
             string fileName
         )
         {
-            var apiKey = _config["Pingram:ApiKey"];
-            if (string.IsNullOrEmpty(apiKey))
-                throw new Exception("Pingram API Key is missing.");
-
-            var client = new PingramClient(apiKey, "https://api.pingram.io");
-
             var body = new SenderPostBody
             {
                 Type = "tenant_document_uploaded",
@@ -206,7 +200,7 @@ namespace OklahomaRentals.Server.Services.Implementations
                 TemplateId = "template_one"
             };
 
-            await client.SendAsync(body);
+            await SendAsync(body);
         }
     }
 }

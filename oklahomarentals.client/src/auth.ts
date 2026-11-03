@@ -20,3 +20,17 @@ export function authFetch(input: RequestInfo | URL, init: RequestInit = {}): Pro
     if (token) headers.set('Authorization', `Bearer ${token}`)
     return fetch(input, { ...init, headers })
 }
+
+// Whether the user has Keycloak's realm "admin" role. Only decides what the UI
+// shows; the API enforces the role on every admin endpoint itself.
+export function isAdmin(user: User | null | undefined): boolean {
+    const payload = user?.access_token?.split('.')[1]
+    if (!payload) return false
+    try {
+        const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+        const roles: unknown = JSON.parse(json)?.realm_access?.roles
+        return Array.isArray(roles) && roles.includes('admin')
+    } catch {
+        return false
+    }
+}
