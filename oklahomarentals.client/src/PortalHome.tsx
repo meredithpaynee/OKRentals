@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from 'react-oidc-context'
 import { Navigate } from 'react-router-dom'
-import { authFetch } from './auth'
+import { authFetch, isAdmin } from './auth'
 import PortalLayout, { Badge, Dialog, Empty, Field, FormStatus, LoadError, Panel, Stat, type SubmitStatus } from './portal/PortalLayout'
 import { formatDate, formatMoney, isOpenRequest } from './portal/format'
 
@@ -52,9 +52,14 @@ export default function PortalHome() {
     const [requestsError, setRequestsError] = useState<string | null>(null)
     const [showRequestForm, setShowRequestForm] = useState(false)
 
+    // Staff go straight to the admin portal, decided from the sign-in token so
+    // it doesn't depend on any resident API call succeeding.
+    const admin = isAdmin(auth.user)
+
     useEffect(() => {
+        if (admin) return
         getJson<Me>('/api/me').then(setMe).catch(err => setMeError(err.message))
-    }, [])
+    }, [admin])
 
     const hasTenant = !!me?.tenant
 
@@ -80,15 +85,14 @@ export default function PortalHome() {
 
     const title = firstName ? `Welcome back, ${firstName}` : 'Resident portal'
 
+    if (admin) {
+        return <Navigate to="/portal/admin" replace />
+    }
     if (meError) {
         return <PortalLayout title={title} sections={[]}><LoadError message={meError} /></PortalLayout>
     }
     if (!me) {
         return <PortalLayout title={title} sections={[]}><p className="portal-loading">Loading…</p></PortalLayout>
-    }
-    // Staff without a lease of their own belong in the admin portal.
-    if (!me.tenant && me.isAdmin) {
-        return <Navigate to="/portal/admin" replace />
     }
     if (!me.tenant) {
         return (
