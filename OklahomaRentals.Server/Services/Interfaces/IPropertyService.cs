@@ -28,6 +28,8 @@ namespace OklahomaRentals.Server.Services.Interfaces
 
         Task<PropertyResponse> CreateFillerTempProperty();
         
+        // Throws InvalidOperationException if tenants, payments, etc. still belong
+        // to the property, since deleting it would delete them too.
         Task<bool> DeleteAsync(int id);
 
         Task<PropertyResponse?> GetByNameAsync(string name);

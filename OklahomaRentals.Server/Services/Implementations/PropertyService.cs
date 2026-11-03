@@ -101,7 +101,13 @@ namespace OklahomaRentals.Server.Services.Implementations
             p.Price = property.Price;
             p.Description = property.Description;
             p.Address = property.Address;
-            p.AdminId = property.AdminId;
+            p.NextAvailable = property.NextAvailable;
+
+            // Keep the current owner and status unless the request sets them.
+            if (property.AdminId > 0)
+                p.AdminId = property.AdminId;
+            if (property.IsLeased.HasValue)
+                p.IsLeased = property.IsLeased.Value;
 
             var updated = await _repository.UpdateAsync(p);
 
@@ -202,6 +208,16 @@ namespace OklahomaRentals.Server.Services.Implementations
 
         public async Task<bool> DeleteAsync(int id)
         {
+            // The database cascades property deletes to tenants, payments, maintenance
+            // requests, documents and applications, so refuse while any exist.
+            var dependents = await _repository.GetDependentRecordsAsync(id);
+            if (dependents.Count > 0)
+            {
+                var list = string.Join(", ", dependents.Select(d => $"{d.Count} {d.Label}{(d.Count == 1 ? "" : "s")}"));
+                throw new InvalidOperationException(
+                    $"This property still has {list}. Deleting it would delete those too, so remove or move them first. To take it off the market instead, mark it leased.");
+            }
+
             return await _repository.DeleteAsync(id);
         }
 

@@ -360,6 +360,37 @@
     color: var(--muted);
 }
 
+/* Per-row buttons at the end of a table row (e.g. Update + delete). */
+.site .data-table .row-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.row-actions > * + * {
+    margin-left: 8px;
+}
+
+.site .icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    vertical-align: middle;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.site .icon-button--danger:hover {
+    color: #fff;
+    background: #8a2a1d;
+    border-color: #8a2a1d;
+}
+
 /* Hidden visually but still read by screen readers. */
 .visually-hidden {
     position: absolute;
