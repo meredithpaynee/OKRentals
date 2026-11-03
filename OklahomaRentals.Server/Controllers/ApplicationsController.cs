@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OklahomaRentals.Server.API.Requests;
 using OklahomaRentals.Server.Services.Interfaces;
 using OklahomaRentals.Server.API.Response;
 
@@ -10,10 +12,42 @@ namespace OklahomaRentals.Server.Controllers
     public class ApplicationsController : ControllerBase
     {
         private readonly IApplicationService _applicationService;
+        private readonly IApplicationEmailService _applicationEmailService;
+        private readonly ILogger<ApplicationsController> _logger;
 
-        public ApplicationsController(IApplicationService applicationService)
+        public ApplicationsController(
+            IApplicationService applicationService,
+            IApplicationEmailService applicationEmailService,
+            ILogger<ApplicationsController> logger)
         {
             _applicationService = applicationService;
+            _applicationEmailService = applicationEmailService;
+            _logger = logger;
+        }
+
+        // Public "Apply to rent" form: emails the application to the office.
+        [HttpPost("submit")]
+        [EnableRateLimiting("applications")]
+        public async Task<IActionResult> Submit([FromBody] RentalApplicationRequest application)
+        {
+            if (!ModelState.IsValid)
+                return ValidationProblem(ModelState);
+
+            // Honeypot filled in: almost certainly a bot. Pretend it worked.
+            if (!string.IsNullOrEmpty(application.Website))
+                return Accepted();
+
+            try
+            {
+                await _applicationEmailService.SendAsync(application);
+                return Accepted();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to email rental application");
+                return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                    new { message = "We couldn't send your application right now." });
+            }
         }
 
         [HttpGet]

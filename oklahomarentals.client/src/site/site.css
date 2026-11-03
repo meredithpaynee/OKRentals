@@ -1115,3 +1115,13 @@
 .notice .button {
     margin-top: 20px;
 }
+
+/* Spam-bot trap on the application form; kept off-screen rather than display:none
+   so simple bots still fill it in. */
+.hp-field {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
