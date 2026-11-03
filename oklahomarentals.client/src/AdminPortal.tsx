@@ -4,7 +4,7 @@ import PortalLayout, { Badge, Dialog, Empty, LoadError, Panel, Stat } from './po
 import { formatDate, formatMoney, isOpenRequest } from './portal/format'
 import type { ApplicationResponse, MaintenanceRequestResponse, PaymentResponse, PropertyResponse, TenantResponse } from './portal/types'
 import ApplicationDetails from './portal/ApplicationDetails'
-import { CreateProperty, RemoveProperty, CreateTenant, RemoveTenant, SetPropertyToLeased, RecordPayment } from './AdminPortalFunctionality'
+import { PropertyForm, DeleteProperty, CreateTenant, RemoveTenant, RecordPayment } from './AdminPortalFunctionality'
 
 interface AdminData {
     properties: PropertyResponse[]
@@ -14,12 +14,10 @@ interface AdminData {
     applications: ApplicationResponse[]
 }
 
-type Action = 'createProperty' | 'removeProperty' | 'setLeased' | 'createTenant' | 'removeTenant' | 'recordPayment'
+type Action = 'createProperty' | 'createTenant' | 'removeTenant' | 'recordPayment'
 
 const actionTitles: Record<Action, string> = {
     createProperty: 'Add a property',
-    removeProperty: 'Remove a property',
-    setLeased: 'Update availability',
     createTenant: 'Add a tenant',
     removeTenant: 'Remove a tenant',
     recordPayment: 'Record a payment',
@@ -37,6 +35,8 @@ export default function AdminPortal() {
     const [error, setError] = useState<string | null>(null)
     const [action, setAction] = useState<Action | null>(null)
     const [openApplicationId, setOpenApplicationId] = useState<number | null>(null)
+    const [editingPropertyId, setEditingPropertyId] = useState<number | null>(null)
+    const [deletingPropertyId, setDeletingPropertyId] = useState<number | null>(null)
 
     const load = useCallback(() => {
         Promise.all([
@@ -76,6 +76,8 @@ export default function AdminPortal() {
     const leased = data?.properties.filter(p => p.isLeased).length ?? 0
     const pendingApplications = data?.applications.filter(a => a.status === 'Pending').length ?? 0
     const openApplication = data?.applications.find(a => a.id === openApplicationId)
+    const editingProperty = data?.properties.find(p => p.id === editingPropertyId)
+    const deletingProperty = data?.properties.find(p => p.id === deletingPropertyId)
 
     return (
         <PortalLayout
@@ -135,17 +137,13 @@ export default function AdminPortal() {
                     <Panel
                         id="properties"
                         title="Properties"
-                        actions={<>
-                            <button className="button button--small" onClick={() => setAction('createProperty')}>Add property</button>
-                            <button className="button button--small button--outline" onClick={() => setAction('setLeased')}>Update availability</button>
-                            <button className="button button--small button--outline" onClick={() => setAction('removeProperty')}>Remove</button>
-                        </>}
+                        actions={<button className="button button--small" onClick={() => setAction('createProperty')}>Add property</button>}
                     >
                         {data.properties.length === 0 ? <Empty>No properties yet.</Empty> : (
                             <div className="table-wrap">
                                 <table className="data-table">
                                     <thead>
-                                        <tr><th>Property</th><th>Campus</th><th>Beds / baths</th><th className="num">Rent</th><th>Tenants</th><th>Status</th></tr>
+                                        <tr><th>Property</th><th>Campus</th><th>Beds / baths</th><th className="num">Rent</th><th>Tenants</th><th>Status</th><th><span className="visually-hidden">Actions</span></th></tr>
                                     </thead>
                                     <tbody>
                                         {data.properties.map(p => (
@@ -156,6 +154,19 @@ export default function AdminPortal() {
                                                 <td className="num">{formatMoney(p.price)}</td>
                                                 <td>{data.tenants.filter(t => t.propertyId === p.id).length}</td>
                                                 <td><Badge>{p.isLeased ? 'Leased' : 'Available'}</Badge></td>
+                                                <td className="row-actions">
+                                                    <button className="button button--small button--outline" onClick={() => setEditingPropertyId(p.id)}>
+                                                        Update
+                                                    </button>
+                                                    <button
+                                                        className="icon-button icon-button--danger"
+                                                        onClick={() => setDeletingPropertyId(p.id)}
+                                                        aria-label={`Delete ${p.name}`}
+                                                        title={`Delete ${p.name}`}
+                                                    >
+                                                        <TrashIcon />
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -261,6 +272,18 @@ export default function AdminPortal() {
                 </>
             )}
 
+            {editingProperty && (
+                <Dialog title={`Update ${editingProperty.name}`} onClose={() => setEditingPropertyId(null)}>
+                    <PropertyForm property={editingProperty} onDone={load} />
+                </Dialog>
+            )}
+
+            {deletingProperty && (
+                <Dialog title="Delete property?" onClose={() => setDeletingPropertyId(null)}>
+                    <DeleteProperty property={deletingProperty} onDone={load} onCancel={() => setDeletingPropertyId(null)} />
+                </Dialog>
+            )}
+
             {openApplication && (
                 <Dialog title={`Application from ${openApplication.name}`} onClose={() => setOpenApplicationId(null)}>
                     <ApplicationDetails application={openApplication} onStatusChanged={load} />
@@ -269,14 +292,23 @@ export default function AdminPortal() {
 
             {action && data && (
                 <Dialog title={actionTitles[action]} onClose={() => setAction(null)}>
-                    {action === 'createProperty' && <CreateProperty onDone={load} />}
-                    {action === 'removeProperty' && <RemoveProperty properties={data.properties} onDone={load} />}
-                    {action === 'setLeased' && <SetPropertyToLeased properties={data.properties} onDone={load} />}
+                    {action === 'createProperty' && <PropertyForm onDone={load} />}
                     {action === 'createTenant' && <CreateTenant properties={data.properties} onDone={load} />}
                     {action === 'removeTenant' && <RemoveTenant tenants={data.tenants} onDone={load} />}
                     {action === 'recordPayment' && <RecordPayment properties={data.properties} tenants={data.tenants} onDone={load} />}
                 </Dialog>
             )}
         </PortalLayout>
+    )
+}
+
+function TrashIcon() {
+    return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v6M14 11v6" />
+        </svg>
     )
 }

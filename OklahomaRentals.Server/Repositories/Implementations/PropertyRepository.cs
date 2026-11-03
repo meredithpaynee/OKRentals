@@ -14,6 +14,19 @@ namespace OklahomaRentals.Server.Repositories.Implementations
             _context = context;
         }
 
+        public async Task<IReadOnlyList<(string Label, int Count)>> GetDependentRecordsAsync(int id)
+        {
+            var counts = new List<(string, int)>
+            {
+                ("tenant", await _context.Tenants.CountAsync(t => t.PropertyId == id)),
+                ("payment", await _context.Payments.CountAsync(p => p.PropertyId == id)),
+                ("maintenance request", await _context.MaintenanceRequests.CountAsync(m => m.PropertyId == id)),
+                ("document", await _context.Documents.CountAsync(d => d.PropertyId == id)),
+                ("application", await _context.Applications.CountAsync(a => a.PropertyId == id)),
+            };
+            return counts.Where(c => c.Item2 > 0).ToList();
+        }
+
         public async Task<IEnumerable<Property>> GetAllAsync()
         {
             return await _context.Properties.ToListAsync();

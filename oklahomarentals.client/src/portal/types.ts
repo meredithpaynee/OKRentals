@@ -9,6 +9,8 @@ export interface PropertyResponse {
     price: number
     address: string
     isLeased: boolean
+    description: string
+    nextAvailable: string
 }
 
 export interface TenantResponse {

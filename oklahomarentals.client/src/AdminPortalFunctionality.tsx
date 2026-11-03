@@ -20,7 +20,8 @@ async function submit(url: string, method: string, body: unknown, success: strin
         })
         if (response.ok) return { kind: 'ok', text: success }
         const errorData = await response.json().catch(() => ({}))
-        return { kind: 'error', text: `Error ${response.status}: ${errorData.message || response.statusText || 'request failed'}` }
+        // Prefer the API's own explanation (e.g. why a property can't be deleted).
+        return { kind: 'error', text: errorData.message || `Error ${response.status}: ${response.statusText || 'request failed'}` }
     } catch (error) {
         console.error(`${method} ${url} failed`, error)
         return { kind: 'error', text: 'Couldn’t reach the server. Please try again.' }
@@ -40,25 +41,34 @@ function useSubmit(onDone: () => void) {
 }
 
 /********************************************************************************************************************
- * Create New Property
+ * Add or Update a Property
  *******************************************************************************************************************/
 
-export function CreateProperty({ onDone }: FormProps) {
-    const [name, setName] = useState('')
-    const [address, setAddress] = useState('')
-    const [campus, setCampus] = useState('')
-    const [bedrooms, setBedrooms] = useState('')
-    const [bathrooms, setBathrooms] = useState('')
-    const [price, setPrice] = useState('')
-    const [nextAvailable, setNextAvailable] = useState('')
-    const [description, setDescription] = useState('')
+// yyyy-mm-dd for a date input; blank for missing / placeholder dates.
+function toDateInput(value?: string): string {
+    if (!value || value.startsWith('0001')) return ''
+    return value.slice(0, 10)
+}
+
+// Adds a property, or edits every field of an existing one when `property` is given.
+export function PropertyForm({ property, onDone }: FormProps & { property?: PropertyResponse }) {
+    const editing = property !== undefined
+    const [name, setName] = useState(property?.name ?? '')
+    const [address, setAddress] = useState(property?.address ?? '')
+    const [campus, setCampus] = useState(property?.campus ?? '')
+    const [bedrooms, setBedrooms] = useState(property ? String(property.bedrooms) : '')
+    const [bathrooms, setBathrooms] = useState(property ? String(property.bathrooms) : '')
+    const [price, setPrice] = useState(property ? String(property.price) : '')
+    const [nextAvailable, setNextAvailable] = useState(toDateInput(property?.nextAvailable))
+    const [isLeased, setIsLeased] = useState(property?.isLeased ?? false)
+    const [description, setDescription] = useState(property?.description ?? '')
     // TODO: remove once the signed-in admin is linked to an admin record.
     const [adminId, setAdminId] = useState('1')
     const { status, run, busy } = useSubmit(onDone)
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault()
-        const ok = await run('/api/properties', 'POST', {
+        const body = {
             Name: name,
             Campus: campus,
             Bedrooms: Number(bedrooms),
@@ -66,9 +76,16 @@ export function CreateProperty({ onDone }: FormProps) {
             Price: Number(price),
             Address: address,
             Description: description,
-            AdminId: Number(adminId),
             NextAvailable: nextAvailable || undefined,
-        }, `Added ${name}.`)
+        }
+
+        if (editing) {
+            // AdminId 0 tells the API to keep the property's current owner.
+            await run(`/api/properties/${property.id}`, 'PUT', { ...body, AdminId: 0, IsLeased: isLeased }, `Saved changes to ${name}.`)
+            return
+        }
+
+        const ok = await run('/api/properties', 'POST', { ...body, AdminId: Number(adminId) }, `Added ${name}.`)
         if (ok) {
             setName(''); setAddress(''); setCampus(''); setBedrooms(''); setBathrooms('')
             setPrice(''); setNextAvailable(''); setDescription('')
@@ -100,18 +117,28 @@ export function CreateProperty({ onDone }: FormProps) {
                 <Field label="Bathrooms" htmlFor="prop-bathrooms">
                     <input id="prop-bathrooms" type="number" min="0" max="10" value={bathrooms} onChange={e => setBathrooms(e.target.value)} required />
                 </Field>
+                {editing && (
+                    <Field label="Status" htmlFor="prop-status">
+                        <select id="prop-status" value={isLeased ? 'leased' : 'available'} onChange={e => setIsLeased(e.target.value === 'leased')}>
+                            <option value="available">Available</option>
+                            <option value="leased">Leased</option>
+                        </select>
+                    </Field>
+                )}
                 <Field label="Next available" htmlFor="prop-available">
                     <input id="prop-available" type="date" value={nextAvailable} onChange={e => setNextAvailable(e.target.value)} />
                 </Field>
-                <Field label="Admin ID" htmlFor="prop-admin">
-                    <input id="prop-admin" type="number" min="1" value={adminId} onChange={e => setAdminId(e.target.value)} required />
-                </Field>
+                {!editing && (
+                    <Field label="Admin ID" htmlFor="prop-admin">
+                        <input id="prop-admin" type="number" min="1" value={adminId} onChange={e => setAdminId(e.target.value)} required />
+                    </Field>
+                )}
                 <Field label="Description" htmlFor="prop-description" full>
                     <textarea id="prop-description" value={description} onChange={e => setDescription(e.target.value)} maxLength={2000} />
                 </Field>
             </div>
             <div className="form-actions">
-                <button type="submit" className="button" disabled={busy}>Add property</button>
+                <button type="submit" className="button" disabled={busy}>{editing ? 'Save changes' : 'Add property'}</button>
             </div>
             <FormStatus status={status} />
         </form>
@@ -119,36 +146,30 @@ export function CreateProperty({ onDone }: FormProps) {
 }
 
 /********************************************************************************************************************
- * Delete Property
+ * Delete a Property
  *******************************************************************************************************************/
 
-export function RemoveProperty({ properties, onDone }: FormProps & { properties: PropertyResponse[] }) {
-    const [selectedId, setSelectedId] = useState('')
+export function DeleteProperty({ property, onDone, onCancel }: FormProps & { property: PropertyResponse; onCancel: () => void }) {
     const { status, run, busy } = useSubmit(onDone)
-    const selected = properties.find(p => String(p.id) === selectedId)
-
-    async function handleSubmit(e: FormEvent) {
-        e.preventDefault()
-        if (!selected) return
-        if (await run(`/api/properties/${selected.id}`, 'DELETE', undefined, `Removed ${selected.name}.`)) setSelectedId('')
-    }
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-                <Field label="Property" htmlFor="remove-property" full>
-                    <select id="remove-property" value={selectedId} onChange={e => setSelectedId(e.target.value)} required>
-                        <option value="" disabled>Select a property</option>
-                        {properties.map(p => <option key={p.id} value={p.id}>{p.name} — {p.address}</option>)}
-                    </select>
-                </Field>
-            </div>
-            <p className="form-note">This permanently deletes the property listing.</p>
+        <div>
+            <p>
+                Permanently delete <strong>{property.name}</strong> ({property.address})? Its listing will be removed
+                from the website. This can't be undone.
+            </p>
             <div className="form-actions">
-                <button type="submit" className="button button--danger" disabled={busy || !selected}>Remove property</button>
+                <button
+                    className="button button--danger"
+                    disabled={busy}
+                    onClick={() => run(`/api/properties/${property.id}`, 'DELETE', undefined, `Deleted ${property.name}.`)}
+                >
+                    Delete property
+                </button>
+                <button className="button button--outline" onClick={onCancel}>Cancel</button>
             </div>
             <FormStatus status={status} />
-        </form>
+        </div>
     )
 }
 
@@ -236,54 +257,6 @@ export function RemoveTenant({ tenants, onDone }: FormProps & { tenants: TenantR
             </div>
             <div className="form-actions">
                 <button type="submit" className="button button--danger" disabled={busy || !selected}>Remove tenant</button>
-            </div>
-            <FormStatus status={status} />
-        </form>
-    )
-}
-
-/********************************************************************************************************************
- * Set a Property to Leased / Available
- *******************************************************************************************************************/
-
-export function SetPropertyToLeased({ properties, onDone }: FormProps & { properties: PropertyResponse[] }) {
-    const [propertyId, setPropertyId] = useState('')
-    const [isLeased, setIsLeased] = useState(true)
-    const { status, run, busy } = useSubmit(onDone)
-
-    const chooseProperty = (id: string) => {
-        setPropertyId(id)
-        const property = properties.find(p => String(p.id) === id)
-        if (property) setIsLeased(!property.isLeased)
-    }
-
-    async function handleSubmit(e: FormEvent) {
-        e.preventDefault()
-        const name = properties.find(p => String(p.id) === propertyId)?.name ?? 'Property'
-        await run(`/api/properties/${propertyId}/availability`, 'PATCH', { isLeased },
-            `${name} is now marked ${isLeased ? 'leased' : 'available'}.`)
-    }
-
-    return (
-        <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-                <Field label="Property" htmlFor="avail-property" full>
-                    <select id="avail-property" value={propertyId} onChange={e => chooseProperty(e.target.value)} required>
-                        <option value="" disabled>Select a property</option>
-                        {properties.map(p => (
-                            <option key={p.id} value={p.id}>{p.name} ({p.isLeased ? 'leased' : 'available'})</option>
-                        ))}
-                    </select>
-                </Field>
-                <Field label="Status" htmlFor="avail-status">
-                    <select id="avail-status" value={isLeased ? 'leased' : 'available'} onChange={e => setIsLeased(e.target.value === 'leased')}>
-                        <option value="available">Available</option>
-                        <option value="leased">Leased</option>
-                    </select>
-                </Field>
-            </div>
-            <div className="form-actions">
-                <button type="submit" className="button" disabled={busy}>Save</button>
             </div>
             <FormStatus status={status} />
         </form>
