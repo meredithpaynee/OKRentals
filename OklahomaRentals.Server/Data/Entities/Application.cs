@@ -35,6 +35,33 @@ namespace OklahomaRentals.Server.Data.Entities
         [Required]
         public DateTime DateSubmitted { get; set; }
 
+        [MaxLength(50)]
+        public string? DriversLicense { get; set; }
+
+        [MaxLength(200)]
+        public string? College { get; set; }
+
+        [MaxLength(200)]
+        public string? Major { get; set; }
+
+        public DateTime? ExpectedGraduation { get; set; }
+
+        [MaxLength(50)]
+        public string? LeaseTerm { get; set; }
+
+        public ResidenceRecord? CurrentResidence { get; set; }
+
+        public ResidenceRecord? PreviousResidence { get; set; }
+
+        // Background questions; null when the applicant didn't answer.
+        public bool? Evicted { get; set; }
+        public bool? BrokenLease { get; set; }
+        public bool? Bankruptcy { get; set; }
+        public bool? Convicted { get; set; }
+
+        [MaxLength(2000)]
+        public string? Explanation { get; set; }
+
         [MaxLength(255)]
         public string FileName { get; set; } = string.Empty;
 

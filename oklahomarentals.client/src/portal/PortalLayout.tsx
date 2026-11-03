@@ -84,6 +84,7 @@ const badgeTone: Record<string, string> = {
     paid: 'good', completed: 'good', resolved: 'good', available: 'good',
     pending: 'warn', partial: 'warn', leased: 'neutral',
     late: 'bad', cancelled: 'neutral',
+    approved: 'good', declined: 'bad',
 }
 
 export function Badge({ children }: { children: string }) {

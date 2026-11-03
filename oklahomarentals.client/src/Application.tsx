@@ -151,7 +151,7 @@ export default function Application() {
                                     ))}
                                 </select>
                             </div>
-                            <Field id="start-date" label="Requested lease start date" type="date" />
+                            <Field id="start-date" label="Requested lease start date" type="date" required />
                             <Field id="lease-term" label="Lease term" placeholder="e.g. 12 months" />
                         </div>
                     </fieldset>

@@ -1,8 +1,20 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useAuth } from 'react-oidc-context'
+import { Link } from 'react-router-dom'
+import { isAdmin } from './auth'
 import SiteLayout from './site/SiteLayout'
 
-export default function ProtectedRoute({ children }: { children: ReactNode }) {
+// Remember the current page so main.tsx can return here after Keycloak.
+const signIn = (auth: ReturnType<typeof useAuth>) =>
+    auth.signinRedirect({ state: { returnTo: window.location.pathname } })
+
+interface Props {
+    children: ReactNode
+    // Also require Keycloak's "admin" role.
+    requireAdmin?: boolean
+}
+
+export default function ProtectedRoute({ children, requireAdmin }: Props) {
     const auth = useAuth()
     const needsLogin = !auth.isLoading && !auth.isAuthenticated && !auth.activeNavigator && !auth.error
 
@@ -12,7 +24,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!needsLogin || redirecting.current) return
         redirecting.current = true
-        auth.signinRedirect().catch(err => {
+        signIn(auth).catch(err => {
             redirecting.current = false
             console.error('Sign-in redirect failed', err)
         })
@@ -25,7 +37,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
                 <div className="container notice">
                     <h2>Sign-in isn't available right now</h2>
                     <p>We couldn't reach the sign-in service. Please try again in a moment.</p>
-                    <button className="button" onClick={() => auth.signinRedirect().catch(() => {})}>
+                    <button className="button" onClick={() => signIn(auth).catch(() => {})}>
                         Try again
                     </button>
                 </div>
@@ -37,6 +49,17 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
         return (
             <SiteLayout>
                 <div className="container notice" aria-busy="true">Redirecting to sign in…</div>
+            </SiteLayout>
+        )
+    }
+
+    if (requireAdmin && !isAdmin(auth.user)) {
+        return (
+            <SiteLayout>
+                <div className="container notice">
+                    <h2>This page is for staff</h2>
+                    <p>Your account doesn't have access to the admin portal. <Link to="/portal">Go to the resident portal</Link>.</p>
+                </div>
             </SiteLayout>
         )
     }

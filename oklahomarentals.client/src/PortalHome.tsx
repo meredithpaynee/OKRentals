@@ -1,13 +1,22 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from 'react-oidc-context'
+import { Navigate } from 'react-router-dom'
 import { authFetch } from './auth'
 import PortalLayout, { Badge, Dialog, Empty, Field, FormStatus, LoadError, Panel, Stat, type SubmitStatus } from './portal/PortalLayout'
 import { formatDate, formatMoney, isOpenRequest } from './portal/format'
 
-// TODO: these should come from the signed-in user's tenant record once
-// Keycloak users are linked to tenants.
-const TENANT_ID = 123
-const PROPERTY_ID = 1
+// GET /api/me: the login, and the tenant record linked to it by email.
+interface Me {
+    isAdmin: boolean
+    tenant: { id: number; name: string; propertyName: string | null; propertyAddress: string | null } | null
+}
+
+function getJson<T>(url: string): Promise<T> {
+    return authFetch(url).then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+    })
+}
 
 interface MaintenanceRequestResponse {
     id: number
@@ -30,14 +39,12 @@ interface PaymentResponse {
     status: string
 }
 
-interface Props {
-    access: string
-    address: string
-}
-
-export default function PortalHome({ address }: Props) {
+export default function PortalHome() {
     const auth = useAuth()
     const firstName = auth.user?.profile.given_name
+
+    const [me, setMe] = useState<Me | null>(null)
+    const [meError, setMeError] = useState<string | null>(null)
 
     const [payments, setPayments] = useState<PaymentResponse[] | null>(null)
     const [paymentsError, setPaymentsError] = useState<string | null>(null)
@@ -46,19 +53,24 @@ export default function PortalHome({ address }: Props) {
     const [showRequestForm, setShowRequestForm] = useState(false)
 
     useEffect(() => {
-        authFetch(`/api/payments?TenantID=${TENANT_ID}`)
-            .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json() })
-            .then((data: PaymentResponse[]) => setPayments(data.filter(p => p.tenantId === TENANT_ID)))
-            .catch(err => setPaymentsError(err.message))
+        getJson<Me>('/api/me').then(setMe).catch(err => setMeError(err.message))
     }, [])
 
+    const hasTenant = !!me?.tenant
+
+    useEffect(() => {
+        if (!hasTenant) return
+        getJson<PaymentResponse[]>('/api/me/payments')
+            .then(setPayments)
+            .catch(err => setPaymentsError(err.message))
+    }, [hasTenant])
+
     const loadRequests = () => {
-        authFetch(`/api/maintenance-requests?propertyId=${PROPERTY_ID}`)
-            .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json() })
-            .then((data: MaintenanceRequestResponse[]) => setRequests(data.filter(r => r.propertyId === PROPERTY_ID)))
+        getJson<MaintenanceRequestResponse[]>('/api/me/maintenance-requests')
+            .then(setRequests)
             .catch(err => setRequestsError(err.message))
     }
-    useEffect(loadRequests, [])
+    useEffect(() => { if (hasTenant) loadRequests() }, [hasTenant])
 
     const balance = payments?.reduce((sum, p) => sum + (p.amountDue - p.amountPaid), 0) ?? null
     const nextDue = payments
@@ -66,10 +78,36 @@ export default function PortalHome({ address }: Props) {
         .sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0]
     const openRequests = requests?.filter(r => isOpenRequest(r.status)).length ?? null
 
+    const title = firstName ? `Welcome back, ${firstName}` : 'Resident portal'
+
+    if (meError) {
+        return <PortalLayout title={title} sections={[]}><LoadError message={meError} /></PortalLayout>
+    }
+    if (!me) {
+        return <PortalLayout title={title} sections={[]}><p className="portal-loading">Loading…</p></PortalLayout>
+    }
+    // Staff without a lease of their own belong in the admin portal.
+    if (!me.tenant && me.isAdmin) {
+        return <Navigate to="/portal/admin" replace />
+    }
+    if (!me.tenant) {
+        return (
+            <PortalLayout title={title} sections={[]}>
+                <Panel id="not-linked" title="Your account isn't set up yet">
+                    <Empty>
+                        We couldn't find a lease linked to {auth.user?.profile.email ?? 'your email address'}. If you're
+                        a current resident, contact us and we'll connect your account.
+                    </Empty>
+                </Panel>
+            </PortalLayout>
+        )
+    }
+
+    const tenant = me.tenant
     return (
         <PortalLayout
-            title={firstName ? `Welcome back, ${firstName}` : 'Resident portal'}
-            subtitle={address || undefined}
+            title={title}
+            subtitle={[tenant.propertyName, tenant.propertyAddress].filter(Boolean).join(' · ') || undefined}
             sections={[
                 { id: 'payments', label: 'Payments' },
                 { id: 'maintenance', label: 'Maintenance' },
@@ -180,16 +218,10 @@ function MaintenanceRequestForm({ onClose, onCreated }: { onClose: () => void; o
         e.preventDefault()
         setStatus({ kind: 'busy', text: 'Submitting…' })
         try {
-            const response = await authFetch('/api/maintenance-requests', {
+            const response = await authFetch('/api/me/maintenance-requests', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    TenantId: TENANT_ID,
-                    PropertyId: PROPERTY_ID,
-                    Title: title,
-                    Description: description,
-                    RequestPriority: priority,
-                }),
+                body: JSON.stringify({ title, description, priority }),
             })
             if (!response.ok) {
                 setStatus({ kind: 'error', text: `Couldn't submit the request (${response.status}).` })

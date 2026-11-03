@@ -40,3 +40,37 @@ export interface MaintenanceRequestResponse {
     dateRequested: string
     dateResolved: string | null
 }
+
+export interface ResidenceResponse {
+    address: string | null
+    landlord: string | null
+    landlordContact: string | null
+    from: string | null
+    to: string | null
+    reasonForLeaving: string | null
+}
+
+export interface ApplicationResponse {
+    id: number
+    propertyId: number
+    propertyName: string | null
+    status: string
+    name: string
+    email: string
+    phoneNumber: string
+    birthDate: string
+    moveInDate: string
+    dateSubmitted: string
+    driversLicense: string | null
+    college: string | null
+    major: string | null
+    expectedGraduation: string | null
+    leaseTerm: string | null
+    currentResidence: ResidenceResponse | null
+    previousResidence: ResidenceResponse | null
+    evicted: boolean | null
+    brokenLease: boolean | null
+    bankruptcy: boolean | null
+    convicted: boolean | null
+    explanation: string | null
+}
