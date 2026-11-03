@@ -5,6 +5,8 @@ using OklahomaRentals.Server.Services.Implementations;
 using OklahomaRentals.Server.Repositories.Interfaces;  
 using OklahomaRentals.Server.Repositories.Implementations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using OklahomaRentals.Server.Auth;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 
@@ -85,19 +87,42 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     options.Authority = builder.Configuration["Keycloak:Authority"];
     options.Audience = builder.Configuration["Keycloak:Audience"];
     options.RequireHttpsMetadata = false; // dev only, set true in prod
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = context =>
+        {
+            KeycloakClaims.AddRealmRoles(context.Principal);
+            return Task.CompletedTask;
+        }
+    };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    var adminOnly = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .RequireRole(AuthPolicies.AdminRole)
+        .Build();
+
+    options.AddPolicy(AuthPolicies.Admin, adminOnly);
+    options.AddPolicy(AuthPolicies.SignedIn, policy => policy.RequireAuthenticatedUser());
+
+    // Secure by default: plain [Authorize] and endpoints with no attribute at all
+    // are admin-only. Public endpoints opt out with [AllowAnonymous]; tenant
+    // endpoints use the SignedIn policy.
+    options.DefaultPolicy = adminOnly;
+    options.FallbackPolicy = adminOnly;
+});
 
 var app = builder.Build();
 
 app.UseDefaultFiles();
-app.MapStaticAssets();
+app.MapStaticAssets().AllowAnonymous();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 }
 
 
@@ -113,6 +138,6 @@ app.UseRateLimiter();
 
 app.MapControllers();
 
-app.MapFallbackToFile("/index.html");
+app.MapFallbackToFile("/index.html").AllowAnonymous();
 
 app.Run();

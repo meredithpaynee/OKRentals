@@ -1,12 +1,20 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useAuth } from 'react-oidc-context'
+import { Link } from 'react-router-dom'
+import { isAdmin } from './auth'
 import SiteLayout from './site/SiteLayout'
 
 // Remember the current page so main.tsx can return here after Keycloak.
 const signIn = (auth: ReturnType<typeof useAuth>) =>
     auth.signinRedirect({ state: { returnTo: window.location.pathname } })
 
-export default function ProtectedRoute({ children }: { children: ReactNode }) {
+interface Props {
+    children: ReactNode
+    // Also require Keycloak's "admin" role.
+    requireAdmin?: boolean
+}
+
+export default function ProtectedRoute({ children, requireAdmin }: Props) {
     const auth = useAuth()
     const needsLogin = !auth.isLoading && !auth.isAuthenticated && !auth.activeNavigator && !auth.error
 
@@ -41,6 +49,17 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
         return (
             <SiteLayout>
                 <div className="container notice" aria-busy="true">Redirecting to sign in…</div>
+            </SiteLayout>
+        )
+    }
+
+    if (requireAdmin && !isAdmin(auth.user)) {
+        return (
+            <SiteLayout>
+                <div className="container notice">
+                    <h2>This page is for staff</h2>
+                    <p>Your account doesn't have access to the admin portal. <Link to="/portal">Go to the resident portal</Link>.</p>
+                </div>
             </SiteLayout>
         )
     }

@@ -8,7 +8,7 @@ using OklahomaRentals.Server.API.Requests;
 
 namespace OklahomaRentals.Server.Controllers
 {
-    [AllowAnonymous]
+    // Listings are public (marked per action); everything else is admin-only.
     [ApiController]
     [Route("api/properties")]
     public class PropertiesController : ControllerBase
@@ -123,7 +123,7 @@ namespace OklahomaRentals.Server.Controllers
         }
 
         // PATCH /api/properties/{id}/availability
-        [AllowAnonymous]
+        [Authorize]
         [HttpPatch("{id}/availability")]
         public async Task<IActionResult> UpdateAvailability(int id, [FromBody] PropertyAvailabilityUpdateRequest request)
         {

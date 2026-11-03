@@ -26,9 +26,8 @@ export default function App() {
                 <Route path="/apply" element={<Application />} />
 
 
-                <Route path="/portal/:access" element={<PortalHome access={""} address="1405 Garland Ave" />} />
                 <Route path="/portal/admin" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAdmin>
                         <AdminPortal />
                     </ProtectedRoute>
                 } />
@@ -37,7 +36,7 @@ export default function App() {
                 <Route path="/properties/:location" element={<Properties />} />
                 <Route path="/portal" element={
                     <ProtectedRoute>
-                        <PortalHome access="Tenant" address="" />
+                        <PortalHome />
                     </ProtectedRoute>
                 } />
 

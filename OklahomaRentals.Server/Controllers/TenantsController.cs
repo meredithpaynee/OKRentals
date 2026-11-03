@@ -7,7 +7,8 @@ using OklahomaRentals.Server.API.Requests;
 
 namespace OklahomaRentals.Server.Controllers
 {
-    [AllowAnonymous]
+    // Admin-only (the app's default policy): tenants see their own data via /api/me.
+    
     [ApiController]
     [Route("api/tenants")]
     public class TenantsController : ControllerBase

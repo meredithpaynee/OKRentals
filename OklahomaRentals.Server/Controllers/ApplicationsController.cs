@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using OklahomaRentals.Server.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using OklahomaRentals.Server.API.Requests;
@@ -9,8 +10,8 @@ using OklahomaRentals.Server.API.Response;
 namespace OklahomaRentals.Server.Controllers
 {
     // Applications hold applicants' personal details, so everything except the
-    // public submit endpoint requires a signed-in user.
-    [Authorize]
+    // public submit endpoint is admin-only.
+    [Authorize(Policy = AuthPolicies.Admin)]
     [ApiController]
     [Route("api/applications")]
     public class ApplicationsController : ControllerBase
