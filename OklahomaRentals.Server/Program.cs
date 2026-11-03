@@ -116,6 +116,14 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+// In development, bring the local database up to date on startup so pulling a
+// branch with a new migration doesn't leave the API failing on missing columns.
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    scope.ServiceProvider.GetRequiredService<ORDbContext>().Database.Migrate();
+}
+
 app.UseDefaultFiles();
 app.MapStaticAssets().AllowAnonymous();
 
