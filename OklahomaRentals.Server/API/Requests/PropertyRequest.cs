@@ -33,5 +33,8 @@ namespace OklahomaRentals.Server.API.Requests
 
         [Required]
         public int AdminId { get; set; }
+
+        // Only applied on update; new properties always start available.
+        public bool? IsLeased { get; set; }
     }
 }

@@ -156,7 +156,15 @@ namespace OklahomaRentals.Server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _propertyService.DeleteAsync(id);
+            bool result;
+            try
+            {
+                result = await _propertyService.DeleteAsync(id);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
             
             if (!result)
                 return NotFound();

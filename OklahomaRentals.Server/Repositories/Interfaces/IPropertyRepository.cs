@@ -10,5 +10,9 @@ namespace OklahomaRentals.Server.Repositories.Interfaces
         Task<Property> UpdateAsync(Property property);
         Task<bool> DeleteAsync(int id);
         Task<bool> ExistsAsync(int id);
+
+        // Records that the database would cascade-delete along with the property,
+        // as (label, count) pairs with a non-zero count.
+        Task<IReadOnlyList<(string Label, int Count)>> GetDependentRecordsAsync(int id);
     }
 }
